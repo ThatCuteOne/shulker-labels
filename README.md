@@ -19,7 +19,7 @@ pyhton ./build.py
 This will generate all the models and item definitions
 
 ### Custom Definitions
-Custom Definitions can be defined in the custom_definitions.json the format is a list of dictornarias which contain a "name" value for the name of the shulker and a "model" value for the path to the model(including namespace)
+Custom Definitions can be defined in the custom_definitions.json the format is a list of dictionaries which contain a "name" value for the name of the shulker and a "model" value for the path to the model(including namespace)
 
 **Code Example:**
 ``` 
