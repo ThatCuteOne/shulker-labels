@@ -4,6 +4,7 @@ Rename your shulker to any model and render an icon on your box
 Rename your shulker box in an anvil to the item that u want it to show
 
 **NOTE:** This only supports all models NOT Model Definitions the full lists for supported names can be found [here(Items)](https://github.com/ThatCuteOne/shulker-labels/blob/main/item_models.json) and [here(Blocks)](https://github.com/ThatCuteOne/shulker-labels/blob/main/block_models.json)
+
 Example:
 ![\<insert image file\>](https://github.com/ThatCuteOne/shulker-labels/blob/main/docs/example1.png)
 
@@ -19,7 +20,8 @@ This will generate all the models and item definitions
 
 ### Custom Definitions
 Custom Definitions can be defined in the custom_definitions.json the format is a list of dictornarias which contain a "name" value for the name of the shulker and a "model" value for the path to the model(including namespace)
-Code Example:
+
+**Code Example:**
 ``` 
 [
     {
