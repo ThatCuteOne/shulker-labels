@@ -1,5 +1,14 @@
 import json
 import copy
+import os
+try:
+  os.mkdir("./assets/label/models/block")
+  os.mkdir("./assets/label/models/item")
+  os.mkdir("./assets/minecraft/items")
+except:
+    pass
+
+
 
 # generate data for cases
 base_definition = {
