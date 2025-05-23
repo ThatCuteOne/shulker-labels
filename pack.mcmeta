@@ -1,0 +1,8 @@
+{
+    "pack": {
+        "description": "§eShulker Labels\n         §8[1.21.5+]",
+        "pack_format": 46,
+        "supported_formats":[15,280],
+        "authors" : "ThatCuteOne"
+    }
+  }
