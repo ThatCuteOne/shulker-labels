@@ -2,9 +2,9 @@ import json
 import copy
 import os
 try:
-  os.mkdir("./assets/label/models/block")
-  os.mkdir("./assets/label/models/item")
-  os.mkdir("./assets/minecraft/items")
+  os.makedirs("./assets/label/models/block")
+  os.makedirs("./assets/label/models/item")
+  os.makedirs("./assets/minecraft/items")
 except:
     pass
 
