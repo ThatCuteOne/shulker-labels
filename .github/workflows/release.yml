@@ -43,18 +43,14 @@ jobs:
       with:
         name: resource-pack-artifact
         path: ${{ env.ZIP_NAME }}
-
     - name: Create Release
       id: create_release
       uses: actions/create-release@v1
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ github.token }}
       with:
-        tag_name: ${{ github.ref }}
+        tag_name: release-${{ github.ref }}
         release_name: Release ${{ github.ref }}
-        body: |
-          Automated release created by GitHub Actions
-          Python script output included
         draft: false
         prerelease: false
     - name: Upload Release Artifact
