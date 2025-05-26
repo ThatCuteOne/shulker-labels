@@ -19,11 +19,6 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: '3.13.3'
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-
     - name: Run Python script
       run: python build.py
 
@@ -35,9 +30,9 @@ jobs:
     - name: Create ZIP file
       run: |
         COMMIT_ID=$(git rev-parse --short HEAD)
-        ZIP_NAME="test ${{ github.ref_name }}.zip"
+        ZIP_NAME="Shulker Labels [${{ github.ref_name }}].zip"
         echo "ZIP_NAME=${ZIP_NAME}" >> $GITHUB_ENV
-        zip -r "${ZIP_NAME}" .
+        zip -r "${ZIP_NAME}" README.md LICENSE assets.
     - name: Upload ZIP artifact
       uses: actions/upload-artifact@v4
       with:
@@ -54,7 +49,6 @@ jobs:
         release_name: Release ${{ github.ref }}
         body: |
           Automated release created by GitHub Actions
-          Python script output included
         draft: false
         prerelease: false
     - name: Upload Release Artifact
