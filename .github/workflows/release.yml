@@ -35,7 +35,7 @@ jobs:
     - name: Create ZIP file
       run: |
         COMMIT_ID=$(git rev-parse --short HEAD)
-        ZIP_NAME="test${{ github.ref }}.zip"
+        ZIP_NAME="test.zip"
         echo "ZIP_NAME=${ZIP_NAME}" >> $GITHUB_ENV
         zip -r "${ZIP_NAME}" .
     - name: Upload ZIP artifact
