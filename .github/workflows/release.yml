@@ -1,0 +1,70 @@
+name: Run Python Script and Create Release
+
+on:
+  push:
+    tags:
+      - 'v*' # This triggers the workflow when you push a tag starting with 'v'
+
+jobs:
+  run-script-and-release:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.13.3'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt # If you have dependencies
+
+    - name: Run Python script
+      run: python build.py
+
+    - name: Run PackSquash
+      uses: ComunidadAylas/PackSquash-action@v4
+      with:
+        packsquash_version: latest # Uses the latest PackSquash release supported by the action
+        shader_source_transformation_strategy: keep_as_is
+    - name: Create ZIP file
+      run: |
+        COMMIT_ID=$(git rev-parse --short HEAD)
+        ZIP_NAME="test${{ github.ref }}.zip"
+        echo "ZIP_NAME=${ZIP_NAME}" >> $GITHUB_ENV
+        zip -r "${ZIP_NAME}" .
+    - name: Upload ZIP artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: resource-pack-artifact
+        path: ${{ env.ZIP_NAME }}
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        body: |
+          Automated release created by GitHub Actions
+          Python script output included
+        draft: false
+        prerelease: false
+    - name: Upload Release Artifact
+      id: upload-release-asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ${{ github.workspace }}/${{ env.ZIP_NAME }}
+        asset_name: ${{ env.ZIP_NAME }}
+        asset_content_type: application/zip
