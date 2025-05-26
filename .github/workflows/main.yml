@@ -1,0 +1,38 @@
+name : Resourcepack Zipper
+on:
+  push:
+    branches:
+      - main  # Adjust this branch name if needed
+jobs:
+    build:
+        runs-on: ubuntu-latest
+    
+        steps:
+        - name: Checkout repository
+          uses: actions/checkout@v4
+          with:
+            fetch-depth: 0
+
+        - name: Set up Python
+          uses: actions/setup-python@v4
+          with:
+            python-version: '3.13.3'
+        - name: Run Python Build script
+          run: python build.py
+
+        - name: Run PackSquash
+          uses: ComunidadAylas/PackSquash-action@v4
+          with:
+            packsquash_version: latest # Uses the latest PackSquash release supported by the action
+            shader_source_transformation_strategy: keep_as_is
+        - name: Create ZIP file
+          run: |
+            COMMIT_ID=$(git rev-parse --short HEAD)
+            ZIP_NAME="Shulker Labels [${{ github.ref_name }}].zip"
+            echo "ZIP_NAME=${ZIP_NAME}" >> $GITHUB_ENV
+            zip -r "${ZIP_NAME}" README.md LICENSE pack.mcmeta assets
+        - name: Upload ZIP artifact
+          uses: actions/upload-artifact@v4
+          with:
+            name: resource-pack-artifact
+            path: "${{ env.ZIP_NAME }}"

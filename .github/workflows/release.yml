@@ -1,4 +1,4 @@
-name: Run Python Script and Create Release
+name: Build and Create Release
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - 'v*' # This triggers the workflow when you push a tag starting with 'v'
 
 jobs:
-  run-script-and-release:
+  build-and-release:
     runs-on: ubuntu-latest
     
     steps:
