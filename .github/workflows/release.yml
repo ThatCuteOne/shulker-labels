@@ -15,10 +15,10 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Read changelog file
-      run: |
-          CHANGELOG=$(cat CHANGELOG.md)
-          echo "changelog=${CHANGELOG}" >> $GITHUB_OUTPUT
+    #- name: Read changelog file
+     # run: |
+      #    CHANGELOG=$(cat CHANGELOG.md)
+       #   echo "changelog=${CHANGELOG}" >> $GITHUB_OUTPUT
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
