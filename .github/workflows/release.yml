@@ -15,24 +15,22 @@ jobs:
       with:
         fetch-depth: 0
 
+    - name: Read changelog file
+      run: |
+          CHANGELOG=$(cat CHANGELOG.md)
+          echo "changelog=${CHANGELOG}" >> $GITHUB_OUTPUT
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.13.3'
     - name: Run Python Build script
       run: python build.py
-
-    - name: Run PackSquash
-      uses: ComunidadAylas/PackSquash-action@v4
-      with:
-        packsquash_version: latest # Uses the latest PackSquash release supported by the action
-        shader_source_transformation_strategy: keep_as_is
     - name: Create ZIP file
       run: |
         COMMIT_ID=$(git rev-parse --short HEAD)
         ZIP_NAME="Shulker Labels [${{ github.ref_name }}].zip"
         echo "ZIP_NAME=${ZIP_NAME}" >> $GITHUB_ENV
-        zip -r "${ZIP_NAME}" README.md LICENSE pack.mcmeta assets
+        zip -r "${ZIP_NAME}" . -x ".git/*" ".github/*" "build.py" "custom_definitions.json" ".gitignore" "block_models.json" "item_models.json"
     - name: Upload ZIP artifact
       uses: actions/upload-artifact@v4
       with:
@@ -49,6 +47,7 @@ jobs:
         release_name: Release ${{ github.ref }}
         body: |
           Automated release created by GitHub Actions
+          ${{ steps.read-changelog.outputs.changelog }}
         draft: false
         prerelease: false
     - name: Upload Release Artifact
@@ -61,3 +60,13 @@ jobs:
         asset_path: ${{ github.workspace }}/${{ env.ZIP_NAME }}
         asset_name: "${{ env.ZIP_NAME }}"
         asset_content_type: application/zip
+    - name: Upload to Modrinth
+      uses: cloudnode-pro/modrinth-publish@v2
+      with:
+        project: zRG512nH
+        version: ${{ github.ref_name }}
+        loaders: '["minecraft"]'
+        game-versions: '["1.21.5"]'
+        files: '${{ env.ZIP_NAME }}'
+        token: ${{ secrets.MODRINTH}},
+        changelog: ${{ steps.read-changelog.outputs.changelog }}
