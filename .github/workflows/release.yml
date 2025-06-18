@@ -18,23 +18,28 @@ jobs:
     - name: Read changelog file
       id: read-changelog
       run: |
-          CHANGELOG=$(cat CHANGELOG.md)
-          CHANGELOG="${CHANGELOG//'%'/'%25'}"
-          CHANGELOG="${CHANGELOG//$'\n'/'%0A'}"
-          CHANGELOG="${CHANGELOG//$'\r'/'%0D'}"
-          echo "changelog=${CHANGELOG}" >> $GITHUB_OUTPUT
+        CHANGELOG=$(cat CHANGELOG.md)
+        # Escape for GitHub output
+        CHANGELOG="${CHANGELOG//'%'/'%25'}"
+        CHANGELOG="${CHANGELOG//$'\n'/'%0A'}"
+        CHANGELOG="${CHANGELOG//$'\r'/'%0D'}"
+        echo "changelog=${CHANGELOG}" >> $GITHUB_OUTPUT
+        
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.13.3'
+        
     - name: Run Python Build script
       run: python build.py
+      
     - name: Create ZIP file
       run: |
         COMMIT_ID=$(git rev-parse --short HEAD)
         ZIP_NAME="Shulker Labels [${{ github.ref_name }}].zip"
         echo "ZIP_NAME=${ZIP_NAME}" >> $GITHUB_ENV
         zip -r "${ZIP_NAME}" . -x ".git/*" ".github/*" "build.py" "custom_definitions.json" ".gitignore" "block_models.json" "item_models.json"
+
     - name: Upload ZIP artifact
       uses: actions/upload-artifact@v4
       with:
@@ -46,13 +51,12 @@ jobs:
       uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        CHANGELOG_CONTENT: ${{ steps.read-changelog.outputs.changelog }}
       with:
         tag_name: ${{ github.ref }}
         release_name: Release ${{ github.ref }}
         body: |
+          ${{ steps.read-changelog.outputs.changelog }}
           Automated release created by GitHub Actions
-          ${{ env.CHANGELOG_CONTENT }}
         draft: false
         prerelease: false
     - name: Upload Release Artifact
@@ -65,12 +69,19 @@ jobs:
         asset_path: ${{ env.ZIP_NAME }}
         asset_name: "${{ env.ZIP_NAME }}"
         asset_content_type: application/zip
-    - name: Decode changelog for Modrinth
-      id: decode-changelog
+        
+    - name: Prepare Modrinth changelog
+      id: prepare-modrinth-changelog
       run: |
-        # Replace %0A with actual newlines
-        DECODED_CHANGELOG=$(echo "${{ steps.read-changelog.outputs.changelog }}" | sed 's/%0A/\n/g')
-        echo "DECODED_CHANGELOG=${DECODED_CHANGELOG}" >> $GITHUB_OUTPUT
+        # Decode GitHub-encoded newlines
+        CHANGELOG="${{ steps.read-changelog.outputs.changelog }}"
+        CHANGELOG="${CHANGELOG//'%0A'/$'\n'}"
+        CHANGELOG="${CHANGELOG//'%0D'/$'\r'}"
+        CHANGELOG="${CHANGELOG//'%25'/'%'}"
+        echo "DECODED_CHANGELOG<<EOF" >> $GITHUB_OUTPUT
+        echo "$CHANGELOG" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+        
     - name: Upload to Modrinth
       uses: cloudnode-pro/modrinth-publish@v2
       with:
@@ -79,5 +90,5 @@ jobs:
         loaders: '["minecraft"]'
         game-versions: '["1.21.5","1.21.6"]'
         files: '${{ env.ZIP_NAME }}'
-        token: ${{ secrets.MODRINTH}}
-        changelog: ${{ steps.decode-changelog.outputs.DECODED_CHANGELOG}}
+        token: ${{ secrets.MODRINTH }}
+        changelog: ${{ steps.prepare-modrinth-changelog.outputs.DECODED_CHANGELOG }}
