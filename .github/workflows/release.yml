@@ -15,10 +15,14 @@ jobs:
       with:
         fetch-depth: 0
 
-    #- name: Read changelog file
-     # run: |
-      #    CHANGELOG=$(cat CHANGELOG.md)
-       #   echo "changelog=${CHANGELOG}" >> $GITHUB_OUTPUT
+    - name: Read changelog file
+      id: read-changelog
+      run: |
+          CHANGELOG=$(cat CHANGELOG.md)
+          CHANGELOG="${CHANGELOG//'%'/'%25'}"
+          CHANGELOG="${CHANGELOG//$'\n'/'%0A'}"
+          CHANGELOG="${CHANGELOG//$'\r'/'%0D'}"
+          echo "changelog=${CHANGELOG}" >> $GITHUB_OUTPUT
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
@@ -42,12 +46,13 @@ jobs:
       uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        CHANGELOG_CONTENT: ${{ steps.read-changelog.outputs.changelog }}
       with:
         tag_name: ${{ github.ref }}
         release_name: Release ${{ github.ref }}
         body: |
           Automated release created by GitHub Actions
-          ${{ steps.read-changelog.outputs.changelog }}
+          ${{ env.CHANGELOG_CONTENT }}
         draft: false
         prerelease: false
     - name: Upload Release Artifact
@@ -57,16 +62,22 @@ jobs:
         GITHUB_TOKEN: ${{ github.token }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ${{ github.workspace }}/${{ env.ZIP_NAME }}
+        asset_path: ${{ env.ZIP_NAME }}
         asset_name: "${{ env.ZIP_NAME }}"
         asset_content_type: application/zip
+    - name: Decode changelog for Modrinth
+      id: decode-changelog
+      run: |
+        # Replace %0A with actual newlines
+        DECODED_CHANGELOG=$(echo "${{ steps.read-changelog.outputs.changelog }}" | sed 's/%0A/\n/g')
+        echo "DECODED_CHANGELOG=${DECODED_CHANGELOG}" >> $GITHUB_OUTPUT
     - name: Upload to Modrinth
       uses: cloudnode-pro/modrinth-publish@v2
       with:
         project: zRG512nH
         version: ${{ github.ref_name }}
         loaders: '["minecraft"]'
-        game-versions: '["1.21.5"]'
+        game-versions: '["1.21.5","1.21.6"]'
         files: '${{ env.ZIP_NAME }}'
-        token: ${{ secrets.MODRINTH}},
-        changelog: ${{ steps.read-changelog.outputs.changelog }}
+        token: ${{ secrets.MODRINTH}}
+        changelog: ${{ steps.decode-changelog.outputs.DECODED_CHANGELOG}}

@@ -7,7 +7,9 @@ try:
   os.makedirs("./assets/minecraft/items")
 except:
     pass
-
+abspath = os.path.abspath(__file__)
+dname = os.path.dirname(abspath)
+os.chdir(dname)
 
 
 # generate data for cases
