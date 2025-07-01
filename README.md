@@ -14,7 +14,7 @@ To Build just run the [build.py](https://github.com/ThatCuteOne/shulker-labels/b
 
 **Note:** I have only tested this on linux but it _should_ work on windows
 ``` 
-pyhton ./build.py
+python ./build.py
 ```
 This will generate all the models and item definitions
 
