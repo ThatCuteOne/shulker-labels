@@ -86,7 +86,7 @@ jobs:
       env:
         DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         DISCORD_USERNAME: "Shulker Lables"
-        DISCORD_AVATAR: https://cdn.modrinth.com/data/iQx2ijVe/29eddb9ed69325732b1280f295c35428b3f8115f_96.webp
+        DISCORD_AVATAR: https://github.com/ThatCuteOne/shulker-labels/blob/main/pack.png?raw=true
         DISCORD_MENTIONS: >-
           {
             "allowed_mentions": {
