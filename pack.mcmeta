@@ -5,7 +5,7 @@
         "supported_formats":[46,280],
         "authors" : "ThatCuteOne",
         "github" :"https://github.com/ThatCuteOne/shulker-labels",
-        "max_format":46,
-        "min_format":280
+        "max_format":280,
+        "min_format":46
     }
 }
