@@ -19,11 +19,12 @@ jobs:
       id: read-changelog
       run: |
         CHANGELOG=$(cat CHANGELOG.md)
-        # Escape for GitHub output
-        CHANGELOG="${CHANGELOG//'%'/'%25'}"
-        CHANGELOG="${CHANGELOG//$'\n'/'%0A'}"
-        CHANGELOG="${CHANGELOG//$'\r'/'%0D'}"
-        echo "changelog=${CHANGELOG}" >> $GITHUB_OUTPUT
+        CHANGELOG="${CHANGELOG//'%0A'/$'\n'}"
+        CHANGELOG="${CHANGELOG//'%0D'/$'\r'}"
+        CHANGELOG="${CHANGELOG//'%25'/'%'}"
+        echo "DECODED_CHANGELOG<<EOF" >> $GITHUB_OUTPUT
+        echo "$CHANGELOG" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
         
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -38,7 +39,7 @@ jobs:
         COMMIT_ID=$(git rev-parse --short HEAD)
         ZIP_NAME="Shulker Labels [${{ github.ref_name }}].zip"
         echo "ZIP_NAME=${ZIP_NAME}" >> $GITHUB_ENV
-        zip -r "${ZIP_NAME}" . -x ".git/*" ".github/*" "build.py" "custom_definitions.json" ".gitignore" "block_models.json" "item_models.json"
+        zip -r "${ZIP_NAME}" . -x ".git/*" ".github/*" "build.py" "custom_definitions.json" ".gitignore" "block_models.json" "item_models.json" "scan.py"
 
     - name: Upload ZIP artifact
       uses: actions/upload-artifact@v4
@@ -70,25 +71,28 @@ jobs:
         asset_name: "${{ env.ZIP_NAME }}"
         asset_content_type: application/zip
         
-    - name: Prepare Modrinth changelog
-      id: prepare-modrinth-changelog
-      run: |
-        # Decode GitHub-encoded newlines
-        CHANGELOG="${{ steps.read-changelog.outputs.changelog }}"
-        CHANGELOG="${CHANGELOG//'%0A'/$'\n'}"
-        CHANGELOG="${CHANGELOG//'%0D'/$'\r'}"
-        CHANGELOG="${CHANGELOG//'%25'/'%'}"
-        echo "DECODED_CHANGELOG<<EOF" >> $GITHUB_OUTPUT
-        echo "$CHANGELOG" >> $GITHUB_OUTPUT
-        echo "EOF" >> $GITHUB_OUTPUT
-        
     - name: Upload to Modrinth
       uses: cloudnode-pro/modrinth-publish@v2
       with:
         project: zRG512nH
         version: ${{ github.ref_name }}
         loaders: '["minecraft"]'
-        game-versions: '["1.21.5","1.21.6","1.21.7"]'
+        game-versions: '["1.21.5","1.21.6","1.21.7","1.21.8","1.21.9"]'
         files: '${{ env.ZIP_NAME }}'
         token: ${{ secrets.MODRINTH }}
-        changelog: ${{ steps.prepare-modrinth-changelog.outputs.DECODED_CHANGELOG }}
+        changelog: ${{ steps.read-changelog.outputs.DECODED_CHANGELOG }}
+    - name: "Actions for Discord"
+      uses: Ilshidur/action-discord@0.4.0
+      env:
+        DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        DISCORD_USERNAME: "Shulker Lables"
+        DISCORD_AVATAR: https://cdn.modrinth.com/data/iQx2ijVe/29eddb9ed69325732b1280f295c35428b3f8115f_96.webp
+        DISCORD_MENTIONS: >-
+          {
+            "allowed_mentions": {
+              "roles": ["1325604992484376688"]
+            }
+          }
+
+      with:
+        args: "<@&1325604992484376688>\n${{ steps.read-changelog.outputs.DECODED_CHANGELOG }}\nDownload: https://modrinth.com/resourcepack/shulker-labels/version/${{ github.ref_name }}"
