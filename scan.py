@@ -1,5 +1,5 @@
 import os
-# this script is used to geather all item modles and block modles
+# this script is used to geather all item modles and block models
 
 block_files = list(os.scandir("./block"))
 item_files = list(os.scandir("./item"))
