@@ -1,3 +1,2 @@
-# Changelog(hotfix)
-- fix pack format version
-- fix discord notif
+# Changelog(hotfix cuz im dumb)
+- fix pack.png
