@@ -35,6 +35,24 @@ base_definition = {
             "base": "minecraft:item/black_shulker_box"
           }
         }
+      },
+      {
+        "when": "firstperson_righthand",
+        "model": {
+          "type": "minecraft:select",
+          "property": "minecraft:component",
+          "component": "minecraft:custom_name",
+          "cases": [],
+          "fallback": {
+            "type": "minecraft:special",
+            "model": {
+              "type": "minecraft:shulker_box",
+              "texture": "minecraft:shulker_black",
+              "openness": 0
+            },
+            "base": "minecraft:item/black_shulker_box"
+          }
+        }
       }
     ],
     "fallback": {
@@ -103,7 +121,7 @@ for x in cases:
     ctemp["model"]["models"][0]["model"] = x["model"]
     interpreted_cases.append(ctemp)
 base_definition['model']["cases"][0]["model"]["cases"] = interpreted_cases
-
+base_definition['model']["cases"][1]["model"]["cases"] = interpreted_cases
 
 # apply template to item model definitions
 template = base_definition
@@ -138,12 +156,18 @@ for c in colors:
         for models in template['model']["cases"][0]["model"]["cases"]:
             write_no_color(models["model"]["models"][1]) 
         write_no_color(template['model']["cases"][0]["model"]["fallback"])
+        for models in template['model']["cases"][1]["model"]["cases"]:
+            write_no_color(models["model"]["models"][1]) 
+        write_no_color(template['model']["cases"][1]["model"]["fallback"])
         write_no_color(template['model']["fallback"])
         out_file = open("./assets/minecraft/items/shulker_box.json","w")
     else:
         for models in template['model']["cases"][0]["model"]["cases"]:
             write(c,models["model"]["models"][1]) 
         write(c,template['model']["cases"][0]["model"]["fallback"])
+        for models in template['model']["cases"][1]["model"]["cases"]:
+            write(c,models["model"]["models"][1]) 
+        write(c,template['model']["cases"][1]["model"]["fallback"])
         write(c,template['model']["fallback"])
         out_file = open(str("./assets/minecraft/items/"+c+"_shulker_box.json"),"w")
     json.dump(template,out_file,indent=2)
@@ -158,7 +182,31 @@ block_model = {
       "rotation": [30,225,0],
       "translation": [0,0,80],
       "scale": [0.4,0.4,0.4]
-    }
+    },
+    # "thirdperson_righthand": {
+    #   "rotation": [0, 90, -35],
+    #   "translation": [0, 0, -3.5],
+    #   "scale": [0.4, 0.4, 0.4]
+    # },
+    # "thirdperson_lefthand": {
+    #   "rotation": [0, 90, -35],
+    #   "translation": [0, 1.25, -3.5],
+    #   "scale": [0.85, 0.85, 0.85]
+    # },
+    "firstperson_righthand": {
+      "rotation": [0, 45, 0],
+      "translation": [0, 1, 0],
+      "scale": [0.3, 0.3, 0.3]
+    },
+    # "firstperson_lefthand": {
+    #   "rotation": [0, -90, 25],
+    #   "translation": [1.13, 3.2, 1.13],
+    #   "scale": [0.68, 0.68, 0.68]
+    # },
+    "ground": {
+      "translation": [0, 3, 0],
+      "scale": [0.25, 0.25, 0.25]
+    },
   }
 }
 with open("block_models.json",encoding="UTF-8") as file:
@@ -176,7 +224,31 @@ item_model = {
     "gui": {
       "translation": [0,0,80],
       "scale": [0.7,0.7,0.7]
-    }
+    },
+    # "thirdperson_righthand": {
+    #   "rotation": [0, 90, -35],
+    #   "translation": [0, 1.25, -3.5],
+    #   "scale": [0.85, 0.85, 0.85]
+    # },
+    # "thirdperson_lefthand": {
+    #   "rotation": [0, 90, -35],
+    #   "translation": [0, 1.25, -3.5],
+    #   "scale": [0.85, 0.85, 0.85]
+    # },
+    "firstperson_righthand": {
+      "rotation": [90, 0, -135],
+      "translation": [0, 3.2, 0],
+      "scale": [0.3, 0.3, 0.3]
+    },
+    # "firstperson_lefthand": {
+    #   "rotation": [90, -90, 25],
+    #   "translation": [1.13, 3.2, 1.13],
+    #   "scale": [0.68, 0.68, 0.68]
+    # },
+    "ground": {
+      "translation": [0, 3, 0],
+      "scale": [0.25, 0.25, 0.25]
+    },
   }
 }
 with open("item_models.json",encoding="UTF-8") as file:
