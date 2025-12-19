@@ -3,35 +3,13 @@ import logging
 import os
 import json
 from pathlib import Path
+import shutil
 import zipfile
 
 import aiofiles
 import aiohttp
 
 snapshot_building = False
-
-case_template ={
-              "when": "",
-              "model": {
-                "type": "minecraft:composite",
-                "models": [
-                  {
-                    "type": "minecraft:model",
-                    "model": "",
-                    "tints": []
-                  },
-                  {
-                    "type": "minecraft:special",
-                    "model": {
-                      "type": "minecraft:shulker_box",
-                      "texture": "minecraft:shulker_black",
-                      "openness": 0
-                    },
-                    "base": "minecraft:item/black_shulker_box"
-                  }
-                ]
-              }
-            }
 
 colors =[
     "black",
@@ -50,11 +28,10 @@ colors =[
     "red",
     "white",
     "yellow",
-    None
+    None # for normal shulker
 ]
 
 
-os.makedirs(".build",exist_ok=True)
 logger = logging.getLogger("Shulker Labels Builder")
 logging.basicConfig(level=logging.INFO,format='[%(asctime)s] [%(name)s/%(levelname)s] %(message)s',datefmt='%H:%M:%S')
 
@@ -65,7 +42,9 @@ class ItemModel():
       id = id.removeprefix('assets/minecraft/models/block/')
       id = id.removesuffix(".json")
       self.id = id
+      self._root_ = f"assets/label/models/{type}"
    async def intepret_as_case(self,shulker_definition):
+      logger.info(f"generating case for {self.id}")
       result = {
               "when": str(self.id),
               "model": {
@@ -81,6 +60,37 @@ class ItemModel():
               }
             }
       return result
+   async def interpret_block_model(self):
+      return {
+          "parent": f"block/{self.id}",
+          "display": {
+            "gui": {
+              "rotation": [30,225,0],
+              "translation": [0,0,80],
+              "scale": [0.4,0.4,0.4]
+            }
+          }
+        }
+   async def interpret_item_model(self):
+      return {
+          "parent": f"item/{self.id}",
+          "display": {
+            "gui": {
+              "translation": [0,0,80],
+              "scale": [0.7,0.7,0.7]
+            }
+          }
+        }
+
+   async def write(self):
+      logger.info(f"Writing Model {self.id}.json")
+      async with aiofiles.open(f"{self._root_}/{self.id}.json","w") as f:
+        if self.type == "block":
+          await f.write(json.dumps(await self.interpret_block_model()))
+        elif self.type == "item":
+           await f.write(json.dumps(await self.interpret_item_model()))
+        else:
+           logger.error(f"Unknown Model type '{self.type}'. Skipping model '{self.id}'")
 
 
 
@@ -105,8 +115,6 @@ class ShulkerItemDefinition():
       },
       "base": f"minecraft:item/{self.color}_shulker_box"
     }
-
-
     if self.color is not None:
       filename = f"{self.color}_shulker_box.json"
     else:
@@ -115,12 +123,10 @@ class ShulkerItemDefinition():
       shulker_model_definition["base"] = "minecraft:item/shulker_box"
 
 
-
     with open(f"{self._root_}/{filename}","w") as f:
       cases = []
       for model in self.entries:
         cases.append(await model.intepret_as_case(shulker_model_definition))
-
 
       data = {
          "model": {
@@ -141,15 +147,12 @@ class ShulkerItemDefinition():
             ]
          }
       }
-      json.dump(data,f,indent=2)
+      f.write(json.dumps(data))
 
 
 class AssetGeatherer():
     def __init__(self):
-      self.models = {
-            "blocks": [],
-            "items" : []
-          }
+      self.models:list[ItemModel] = []
       
     async def json_get_request(self,url:str)->dict:
       try:
@@ -220,12 +223,12 @@ class AssetGeatherer():
                 if file_info.filename.startswith('assets/minecraft/models/item/'):
                     filename = file_info.filename.removeprefix('assets/minecraft/models/item/')
                     if filename not in known_ids:
-                      self.models["items"].append(ItemModel(file_info.filename.removeprefix('assets/minecraft/models/item/'),"item"))
+                      self.models.append(ItemModel(file_info.filename.removeprefix('assets/minecraft/models/item/'),"item"))
                       known_ids.append(filename)
                 elif file_info.filename.startswith('assets/minecraft/models/block/'):
                     filename = file_info.filename.removeprefix('assets/minecraft/models/block/')
                     if filename not in known_ids:
-                      self.models["blocks"].append(ItemModel(filename,"block"))
+                      self.models.append(ItemModel(filename,"block"))
                       known_ids.append(filename)
                     
       except FileNotFoundError:
@@ -237,6 +240,8 @@ class AssetGeatherer():
 
 
 async def main():
+  os.makedirs(".build",exist_ok=True)
+  shutil.rmtree("assets")
   # this class is all wierd idk why i wrote it like that(idk what this code comment is either)
   assets = AssetGeatherer()
   await assets.run()
@@ -246,23 +251,26 @@ async def main():
   os.makedirs("./assets/label/models/item",exist_ok=True)
   os.makedirs("./assets/minecraft/items",exist_ok=True)
 
+  # generate item definitions
   tasks = []
   for shulker in colors:
     shulkerclass = ShulkerItemDefinition(shulker)
-    shulkerclass.entries.extend(assets.models["items"])
-    shulkerclass.entries.extend(assets.models["blocks"])
+    shulkerclass.entries.extend(assets.models)
     tasks.append(shulkerclass.write())
 
-  await asyncio.gather(*tasks)
 
-  with open(".build/data.json") as f:
+  with open(".build/data.json","w") as f:
      json.dump({
         "minecraft_version": assets.version
      },f)
+  # generate item models
+  for item_model in assets.models:
+     tasks.append(item_model.write())
      
 
 
-
+  await asyncio.gather(*tasks)
+  logger.info("Done!")
 
 
 
