@@ -68,7 +68,12 @@ class ItemModel():
               "rotation": [30,225,0],
               "translation": [0,0,80],
               "scale": [0.4,0.4,0.4]
-            }
+            },
+            "firstperson_righthand": {
+              "rotation": [0, 45, 0],
+              "translation": [0, 1, 0],
+              "scale": [0.3, 0.3, 0.3]
+            },
           }
         }
    async def interpret_item_model(self):
@@ -78,7 +83,12 @@ class ItemModel():
             "gui": {
               "translation": [0,0,80],
               "scale": [0.7,0.7,0.7]
-            }
+            },
+            "firstperson_righthand": {
+              "rotation": [90, 0, -135],
+              "translation": [0, 3.2, 0],
+              "scale": [0.3, 0.3, 0.3]
+            },
           }
         }
 
