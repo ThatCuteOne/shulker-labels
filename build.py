@@ -1,77 +1,14 @@
-import json
-import copy
+import asyncio
+import logging
 import os
-try:
-  os.makedirs("./assets/label/models/block")
-  os.makedirs("./assets/label/models/item")
-  os.makedirs("./assets/minecraft/items")
-except:
-    pass
-abspath = os.path.abspath(__file__)
-dname = os.path.dirname(abspath)
-os.chdir(dname)
+import json
+from pathlib import Path
+import zipfile
 
+import aiofiles
+import aiohttp
 
-# generate data for cases
-base_definition = {
-  "model": {
-    "type": "select",
-    "property": "minecraft:display_context",
-    "cases": [
-      {
-        "when": "gui",
-        "model": {
-          "type": "minecraft:select",
-          "property": "minecraft:component",
-          "component": "minecraft:custom_name",
-          "cases": [],
-          "fallback": {
-            "type": "minecraft:special",
-            "model": {
-              "type": "minecraft:shulker_box",
-              "texture": "minecraft:shulker_black",
-              "openness": 0
-            },
-            "base": "minecraft:item/black_shulker_box"
-          }
-        }
-      }
-    ],
-    "fallback": {
-      "type": "minecraft:special",
-      "model": {
-        "type": "minecraft:shulker_box",
-        "texture": "minecraft:shulker_black",
-        "openness": 0
-      },
-      "base": "minecraft:item/black_shulker_box"
-    }
-  }
-}
-cases = []
-
-def index_cases(file,model_type):
-    with open(file,encoding="UTF-8") as file:
-        models = json.load(file)
-        for model in models:
-            model = model[:-5]
-            cases.insert(0,{"name":f"{model}"})
-            cases[0]["model"] = f"label:{model_type}/{model}"
-
-
-print("Geathering cases from block models...")
-index_cases("block_models.json","block")
-print("Geathering cases from item models...")
-index_cases("item_models.json","item")
-with open("custom_definitions.json",encoding="UTF-8") as file:
-    definitions = json.load(file)
-    for definition in definitions:
-        cases.insert(0,definition)
-# remove duplicates
-print("Removing Duplicates..")
-seen = set()
-cases = [d for d in cases if not (d['name'] in seen or seen.add(d['name']))]
-
+snapshot_building = False
 
 case_template ={
               "when": "",
@@ -95,19 +32,7 @@ case_template ={
                 ]
               }
             }
-print("Interpreting Cases..")
-interpreted_cases = []
-for x in cases:
-    ctemp = copy.deepcopy(case_template)
-    ctemp["when"] = x["name"]
-    ctemp["model"]["models"][0]["model"] = x["model"]
-    interpreted_cases.append(ctemp)
-base_definition['model']["cases"][0]["model"]["cases"] = interpreted_cases
 
-
-# apply template to item model definitions
-template = base_definition
-print("Generateing Item model Definitions..")
 colors =[
     "black",
     "blue",
@@ -125,66 +50,220 @@ colors =[
     "red",
     "white",
     "yellow",
-    ""
+    None
 ]
-def write_no_color(path):
-    path["base"] = str("minecraft:item/shulker_box")
-    path["model"]["texture"] = str("shulker")
-def write(color,path):
-    path["base"] = str("minecraft:item/"+color+"_shulker_box")
-    path["model"]["texture"] = str("shulker_"+color)
-for c in colors:
-    if c == "":
-        for models in template['model']["cases"][0]["model"]["cases"]:
-            write_no_color(models["model"]["models"][1]) 
-        write_no_color(template['model']["cases"][0]["model"]["fallback"])
-        write_no_color(template['model']["fallback"])
-        out_file = open("./assets/minecraft/items/shulker_box.json","w")
+
+
+os.makedirs(".build",exist_ok=True)
+logger = logging.getLogger("Shulker Labels Builder")
+logging.basicConfig(level=logging.INFO,format='[%(asctime)s] [%(name)s/%(levelname)s] %(message)s',datefmt='%H:%M:%S')
+
+class ItemModel():
+   def __init__(self,id,type):
+      self.type = type
+      id = id.removeprefix('assets/minecraft/models/item/')
+      id = id.removeprefix('assets/minecraft/models/block/')
+      id = id.removesuffix(".json")
+      self.id = id
+   async def intepret_as_case(self,shulker_definition):
+      result = {
+              "when": str(self.id),
+              "model": {
+                "type": "minecraft:composite",
+                "models": [
+                  {
+                    "type": "minecraft:model",
+                    "model": f"label:{self.type}/{self.id}",
+                    "tints": []
+                  },
+                  shulker_definition
+                ]
+              }
+            }
+      return result
+
+
+
+
+      
+      
+      
+
+class ShulkerItemDefinition():
+  def __init__(self,color):
+      self.color = color
+      self.entries = []
+      self._root_ = "assets/minecraft/items"
+
+  async def write(self):
+    shulker_model_definition ={
+      "type": "minecraft:special",
+      "model": {
+        "type": "minecraft:shulker_box",
+        "texture": f"minecraft:shulker_{self.color}",
+        "openness": 0
+      },
+      "base": f"minecraft:item/{self.color}_shulker_box"
+    }
+
+
+    if self.color is not None:
+      filename = f"{self.color}_shulker_box.json"
     else:
-        for models in template['model']["cases"][0]["model"]["cases"]:
-            write(c,models["model"]["models"][1]) 
-        write(c,template['model']["cases"][0]["model"]["fallback"])
-        write(c,template['model']["fallback"])
-        out_file = open(str("./assets/minecraft/items/"+c+"_shulker_box.json"),"w")
-    json.dump(template,out_file,indent=2)
+      filename = "shulker_box.json"
+      shulker_model_definition["model"]["texture"] = "minecraft:shulker"
+      shulker_model_definition["base"] = "minecraft:item/shulker_box"
 
 
-# generate models
-print("Generateing Block Models..")
-block_model = {
-  "parent": "",
-  "display": {
-    "gui": {
-      "rotation": [30,225,0],
-      "translation": [0,0,80],
-      "scale": [0.4,0.4,0.4]
-    }
-  }
-}
-with open("block_models.json",encoding="UTF-8") as file:
-    models = json.load(file)
-for model_name in models:
-    out_file = open(f"./assets/label/models/block/{model_name}","w")
-    f = block_model
-    model_name_pure = model_name[:-5]
-    f["parent"] = "block/"+ model_name_pure
-    json.dump(f,out_file,indent=2)
-print("Generateing Item Models..")
-item_model = {
-  "parent": "item/fire_charge",
-  "display": {
-    "gui": {
-      "translation": [0,0,80],
-      "scale": [0.7,0.7,0.7]
-    }
-  }
-}
-with open("item_models.json",encoding="UTF-8") as file:
-    models = json.load(file)
-for model_name in models:
-    out_file = open(f"./assets/label/models/item/{model_name}","w")
-    f = item_model
-    model_name_pure = model_name[:-5]
-    f["parent"] = "item/"+ model_name_pure
-    json.dump(f,out_file,indent=2)
-print("Completed!")
+
+    with open(f"{self._root_}/{filename}","w") as f:
+      cases = []
+      for model in self.entries:
+        cases.append(await model.intepret_as_case(shulker_model_definition))
+
+
+      data = {
+         "model": {
+            "type": "select",
+            "property": "minecraft:display_context",
+            "fallback": shulker_model_definition,
+            "cases": [
+              {
+                "when": ["gui","firstperson_lefthand","firstperson_righthand"],
+                "model": {
+                  "type": "minecraft:select",
+                  "property": "minecraft:component",
+                  "component": "minecraft:custom_name",
+                  "cases": cases,
+                  "fallback": shulker_model_definition
+                }
+              }
+            ]
+         }
+      }
+      json.dump(data,f,indent=2)
+
+
+class AssetGeatherer():
+    def __init__(self):
+      self.models = {
+            "blocks": [],
+            "items" : []
+          }
+      
+    async def json_get_request(self,url:str)->dict:
+      try:
+          async with aiohttp.ClientSession() as client:
+             async with client.get(url) as response:
+                if response.status == 200:
+                   return await response.json()
+      except aiohttp.ClientResponseError as e:
+            if e.status == 404:
+                logger.error(f"Failed to connect to {url}")
+            else:
+                logger.exception(f"HTTP error: {e}")
+      except Exception as e:
+            logger.error(f"Unexpected error: {e}")
+
+    async def download_jar(self,url:str):
+      logger.info("Downloading client.jar")
+      try:
+            async with aiohttp.ClientSession() as client:
+                async with client.get(url) as response:
+                    response.raise_for_status()
+                    async with aiofiles.open(".build/client.jar", 'wb') as f:
+                        async for chunk in response.content.iter_chunked(8192):
+                            await f.write(chunk)
+                        return True
+      except aiohttp.ClientResponseError as e:
+            if e.status == 404:
+                logger.error(f"Failed to connect to {url}")
+            else:
+                logger.exception(f"HTTP error: {e}")
+      except Exception as e:
+            logger.error(f"Unexpected error: {e}")
+
+    async def get_version_url(self):
+      version_meta = await self.json_get_request("https://launchermeta.mojang.com/mc/game/version_manifest.json")
+      if snapshot_building:
+        logger.info("Building for latest snapshot")
+        target_version = version_meta["latest"]["snapshot"]
+      else:
+        logger.info("Building for latest release")
+        target_version = version_meta["latest"]["release"]
+      self.version = target_version
+      for version in version_meta["versions"]:
+         if version["id"] == target_version:
+            return version["url"]            
+         
+    def local_is_newest(self):
+      try:
+      # checks if the newest assets are already downloaded or not
+        with open(".build/data.json","r") as f:
+            data = json.load(f)
+        if data["minecraft_version"] == self.version:
+            return True
+      except Exception:
+         return False
+      return False
+
+       
+    async def run(self):
+      version_metadata = await self.json_get_request(await self.get_version_url())
+      if not self.local_is_newest() or not Path(".build/client.jar").exists():
+        await self.download_jar(version_metadata["downloads"]["client"]["url"])
+      known_ids = []
+      try:
+        with zipfile.ZipFile(".build/client.jar", 'r') as jar:
+            # Filter for files in the models directory
+            for file_info in jar.infolist():
+                if file_info.filename.startswith('assets/minecraft/models/item/'):
+                    filename = file_info.filename.removeprefix('assets/minecraft/models/item/')
+                    if filename not in known_ids:
+                      self.models["items"].append(ItemModel(file_info.filename.removeprefix('assets/minecraft/models/item/'),"item"))
+                      known_ids.append(filename)
+                elif file_info.filename.startswith('assets/minecraft/models/block/'):
+                    filename = file_info.filename.removeprefix('assets/minecraft/models/block/')
+                    if filename not in known_ids:
+                      self.models["blocks"].append(ItemModel(filename,"block"))
+                      known_ids.append(filename)
+                    
+      except FileNotFoundError:
+        logger.error("Error: JAR file not found.")
+      except zipfile.BadZipFile:
+        logger.error("Error: client.jar is not a valid ZIP/JAR file.")
+
+
+
+
+async def main():
+  # this class is all wierd idk why i wrote it like that(idk what this code comment is either)
+  assets = AssetGeatherer()
+  await assets.run()
+
+  # generate files
+  os.makedirs("./assets/label/models/block",exist_ok=True)
+  os.makedirs("./assets/label/models/item",exist_ok=True)
+  os.makedirs("./assets/minecraft/items",exist_ok=True)
+
+  tasks = []
+  for shulker in colors:
+    shulkerclass = ShulkerItemDefinition(shulker)
+    shulkerclass.entries.extend(assets.models["items"])
+    shulkerclass.entries.extend(assets.models["blocks"])
+    tasks.append(shulkerclass.write())
+
+  await asyncio.gather(*tasks)
+
+  with open(".build/data.json") as f:
+     json.dump({
+        "minecraft_version": assets.version
+     },f)
+     
+
+
+
+
+
+
+asyncio.run(main())
