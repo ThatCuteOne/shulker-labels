@@ -251,7 +251,7 @@ class AssetGeatherer():
 
 async def main():
   os.makedirs(".build",exist_ok=True)
-  shutil.rmtree("assets")
+  shutil.rmtree("assets",ignore_errors=True)
   # this class is all wierd idk why i wrote it like that(idk what this code comment is either)
   assets = AssetGeatherer()
   await assets.run()
