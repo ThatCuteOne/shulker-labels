@@ -1,2 +1,2 @@
-# Changelog(hotfix cuz im dumb)
-- fix pack.png
+# Changelog
+- made items also render on the shulkerbox in firstperson
