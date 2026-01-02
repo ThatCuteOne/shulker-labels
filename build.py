@@ -235,7 +235,8 @@ class AssetGeatherer():
                     if filename not in known_ids:
                       self.models.append(ItemModel(file_info.filename.removeprefix('assets/minecraft/models/item/'),"item"))
                       known_ids.append(filename)
-                elif file_info.filename.startswith('assets/minecraft/models/block/'):
+            for file_info in jar.infolist():
+              if file_info.filename.startswith('assets/minecraft/models/block/'):
                     filename = file_info.filename.removeprefix('assets/minecraft/models/block/')
                     if filename not in known_ids:
                       self.models.append(ItemModel(filename,"block"))
