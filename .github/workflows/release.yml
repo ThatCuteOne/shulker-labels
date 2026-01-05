@@ -3,7 +3,7 @@ name: Build and Create Release
 on:
   push:
     tags:
-      - 'v*' # This triggers the workflow when you push a tag starting with 'v'
+      - 'v*'
 
 jobs:
   build-and-release:

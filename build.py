@@ -74,6 +74,11 @@ class ItemModel():
               "translation": [0, 1, 0],
               "scale": [0.3, 0.3, 0.3]
             },
+            "thirdperson_righthand": {
+            "rotation": [ 75, 45, 0 ],
+            "translation": [0, 2.75, 1.25], #FIXME wierd magic number please someone smarter fix this(center it properly)
+            "scale": [ 0.25, 0.25, 0.25 ]
+            }
           }
         }
    async def interpret_item_model(self):
@@ -89,6 +94,11 @@ class ItemModel():
               "translation": [0, 3.2, 0],
               "scale": [0.3, 0.3, 0.3]
             },
+            "thirdperson_righthand": {
+              "rotation": [ -15, 0, -45 ],
+              "translation": [ 0, 3.25, 3 ], #FIXME wierd magic number please someone smarter fix this(center it properly)
+              "scale": [ 0.3, 0.3, 0.3 ]
+            }
           }
         }
 
@@ -145,7 +155,7 @@ class ShulkerItemDefinition():
             "fallback": shulker_model_definition,
             "cases": [
               {
-                "when": ["gui","firstperson_lefthand","firstperson_righthand"],
+                "when": ["gui","firstperson_lefthand","firstperson_righthand","thirdperson_righthand","thirdperson_lefthand"],
                 "model": {
                   "type": "minecraft:select",
                   "property": "minecraft:component",

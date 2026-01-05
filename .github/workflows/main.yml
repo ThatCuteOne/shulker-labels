@@ -2,7 +2,7 @@ name : Resourcepack Zipper
 on:
   push:
     branches:
-      - main  # Adjust this branch name if needed
+      - main
 jobs:
     build:
         runs-on: ubuntu-latest
