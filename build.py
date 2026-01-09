@@ -284,11 +284,15 @@ async def main():
      json.dump({
         "minecraft_version": assets.version
      },f)
+  doc_ids = []
   # generate item models
   for item_model in assets.models:
      tasks.append(item_model.write())
+     doc_ids.append(item_model.id)
+  with open("docs/generated/namelist.json","w") as f:
+        json.dump(doc_ids,f,indent=2)
      
-
+  
 
   await asyncio.gather(*tasks)
   logger.info("Done!")
