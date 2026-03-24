@@ -133,7 +133,21 @@ class ShulkerItemDefinition():
         "texture": f"minecraft:shulker_{self.color}",
         "openness": 0
       },
-      "base": f"minecraft:item/{self.color}_shulker_box"
+      "base": f"minecraft:item/{self.color}_shulker_box",
+      "transformation": {
+      "left_rotation": [
+         1.0,0.0,0.0,0.0
+      ],
+      "right_rotation": [
+        -0.0,-0.0,-0.0,1.0
+      ],
+      "scale": [
+        0.9995,0.9995,0.9995
+      ],
+      "translation": [
+        0.5,1.4995,0.5
+      ]
+    }
     }
     if self.color is not None:
       filename = f"{self.color}_shulker_box.json"
