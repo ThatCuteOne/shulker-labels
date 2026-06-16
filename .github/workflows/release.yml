@@ -94,12 +94,6 @@ jobs:
         DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         DISCORD_USERNAME: "Shulker Lables"
         DISCORD_AVATAR: https://github.com/ThatCuteOne/shulker-labels/blob/main/pack.png?raw=true
-        DISCORD_MENTIONS: >-
-          {
-            "allowed_mentions": {
-              "roles": ["1325604992484376688"]
-            }
-          }
-
+        DISCORD_MENTIONS: '{"roles": ["1325604992484376688"]}'
       with:
         args: "<@&1325604992484376688>\n${{ steps.read-changelog.outputs.DECODED_CHANGELOG }}\nDownload: https://modrinth.com/resourcepack/shulker-labels/version/${{ github.ref_name }}"
