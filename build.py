@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 import asyncio
 import logging
 import os
@@ -175,7 +176,13 @@ class ShulkerItemDefinition():
                   "property": "minecraft:component",
                   "component": "minecraft:custom_name",
                   "cases": cases,
-                  "fallback": shulker_model_definition
+                  "fallback": {
+                    "type": "minecraft:select",
+                    "property": "minecraft:component",
+                    "component": "minecraft:item_name",
+                    "cases": cases,
+                    "fallback": shulker_model_definition
+                  }
                 }
               }
             ]
